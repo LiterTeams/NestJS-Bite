@@ -1,0 +1,289 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_URL")
+}
+
+// datasource db {
+//   provider = "mysql"
+//   url      = env("MYSQL_URL")
+// }
+
+model User {
+  id Int @id @default(autoincrement())
+  
+  fullName String @db.VarChar(96) @map("full_name")
+  avatar String? @default("/uploads/avatars/default-avatar.webp")
+  email String @unique
+  phone String @unique
+  address String?
+  password String
+  
+  role UserRoles @default(user)
+  blocking Boolean @default(false)
+
+  news News[]
+  comments Comment[]
+  orders Order[]
+  configuratinos Configuration[]
+  notifications Notification[]
+  favorites Favorite[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @default(now()) @map("updated_at")
+}
+
+model Catalog {
+  id Int @id @default(autoincrement())
+  
+  title String @unique
+  slug String @unique
+  image String @default("/uploads/catalogs/default-catalog.webp")
+  
+  categories Category[]
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @default(now()) @map("updated_at")
+}
+
+model Category {
+  id Int @id @default(autoincrement())
+  catalogId Int @map("catalog_id")
+  
+  title String @unique
+  slug String @unique
+  image String @default("/uploads/categories/default-category.webp")
+  
+  products Product[]
+  
+  catalog Catalog? @relation(fields: [catalogId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @default(now()) @map("updated_at")
+}
+
+model Manufacture {
+  id Int @id @default(autoincrement())
+
+  manufacture String @db.VarChar(256)
+  slug String @db.VarChar(256) @unique
+
+  products Product[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @default(now()) @map("updated_at")
+}
+
+model Provider {
+  id Int @id @default(autoincrement())
+
+  name String
+  phone String @unique
+  address String?
+  description String?
+
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @default(now()) @map("updated_at")
+}
+
+model Product {
+  id Int @id @default(autoincrement())
+  categoryId Int @map("category_id")
+  manufactureId Int @map("manufacture_id")
+
+  title String @db.VarChar(256)
+  description String
+  price Int
+  amount Int
+  slug String @unique
+  images String[] @default(["/uploads/products/default-product.webp"])
+  discount String? @db.VarChar(4) @default("0%")
+
+  orderItems OrderItem[]
+  configurationItems ConfigurationItem[]
+  favorites Favorite[]
+  comments Comment[]
+  
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  manufacture Manufacture? @relation(fields: [manufactureId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @default(now()) @map("updated_at")
+}
+
+model Comment {
+  id Int @id @default(autoincrement())
+  userId Int @map("user_id")
+  productId Int @map("product_id")
+  
+  comment String @db.VarChar(512)
+  rating Int
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @default(now()) @map("updated_at")
+}
+
+model Order {
+  id Int @id @default(autoincrement())
+  userId Int @map("user_id")
+
+  status OrderStatus @default(new)
+  totalPrice Int @map("total_price")
+  items OrderItem[]
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @default(now()) @map("updated_at")
+}
+
+model OrderItem {
+  id Int @id @default(autoincrement())
+  orderId Int @map("order_id")
+  productId Int @map("product_id")
+
+  quantity Int
+  price Int
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @default(now()) @map("updated_at")
+}
+
+model Configuration {
+  id Int @id @default(autoincrement())
+  userId Int @map("user_id")
+
+  items ConfigurationItem[]
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @default(now()) @map("updated_at")
+}
+
+model ConfigurationItem {
+  id Int @id @default(autoincrement())
+  configurationId Int @map("configuration_id")
+  productId Int @map("product_id")
+
+  configuration Configuration @relation(fields: [configurationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  product Product @relation(fields: [productId], references: [id], onUpdate: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @default(now()) @map("updated_at")
+}
+
+model Notification {
+  id Int @id @default(autoincrement())
+  userId Int @map("user_id")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @default(now()) @map("updated_at")
+}
+
+model Favorite {
+  id Int @id @default(autoincrement())
+  userId Int @map("user_id")
+  productId Int @map("product_id")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @default(now()) @map("updated_at")
+}
+
+model News {
+  id Int @id @default(autoincrement())
+  userId Int @map("user_id")
+  
+  image String? @default("/uploads/news/default-news.webp")
+  title String @db.VarChar(128)
+  description String
+  status NewsStatus @default(draft)
+  category NewsCategories
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @default(now()) @map("updated_at")
+}
+
+model Note {
+  id Int @id @default(autoincrement())
+  url String
+  name String
+  extension NoteExtension
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @default(now()) @map("updated_at")
+}
+model Image {
+  id Int @id @default(autoincrement())
+  url String
+  name String
+  extension ImageExtension
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @default(now()) @map("updated_at")
+}
+model Video {
+  id Int @id @default(autoincrement())
+  url String
+  name String
+  extension VideoExtension
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @default(now()) @map("updated_at")
+}
+
+enum UserRoles { 
+  user
+  moderator
+  admin
+}
+enum OrderStatus {
+  new
+  accept
+  reject
+  done
+}
+enum NewsStatus {
+  draft
+  published
+  archived
+}
+enum NewsCategories {
+  news
+  promotion
+}
+
+enum NoteExtension {
+  doc
+  docx
+  txt
+  js
+  ogg
+  mp3
+}
+enum ImageExtension {
+  png
+  jpg
+  jpeg
+  webp
+  avif
+}
+enum VideoExtension {
+  mp4
+  webm
+  avi
+}
